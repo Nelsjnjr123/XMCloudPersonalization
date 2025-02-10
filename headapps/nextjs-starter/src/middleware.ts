@@ -1,5 +1,5 @@
-import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
-import middleware from "lib/middleware";
+import { NextResponse, NextRequest, NextFetchEvent } from 'next/server';
+import middleware from 'lib/middleware';
 
 // Caching the Sitecore API response
 let countriesCache: Map<string, string> | null = null;
