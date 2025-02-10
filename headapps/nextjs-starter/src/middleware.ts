@@ -4,13 +4,11 @@ import middleware from 'lib/middleware';
 // Caching the Sitecore API response
 let countriesCache: Map<string, string> | null = null;
 
-async function getCountriesFromSitecore() {
+async function getCountriesFromSitecore(): Promise<Map<string, string>> {
   const query = `
   {
-    item(language:'en', path:'{91CEB4EA-3EB0-4C5D-A25D-3E6801C46A9F}')
-    {
-      field(name:'CountryMapping')
-      {
+    item(language: "en", path: "{91CEB4EA-3EB0-4C5D-A25D-3E6801C46A9F}") {
+      field(name: "CountryMapping") {
         jsonValue
       }
     }
@@ -21,10 +19,9 @@ async function getCountriesFromSitecore() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-GQL-TOKEN':
-        'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE=',
+      'X-GQL-TOKEN': 'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE='
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query })
   });
 
   if (!response.ok) {
@@ -32,12 +29,16 @@ async function getCountriesFromSitecore() {
   }
 
   const data = await response.json();
-  const countriesString = data.data.item.field.jsonValue.value;
+  const countriesString: string = data?.data?.item?.field?.jsonValue?.value;
+
+  if (!countriesString) {
+    throw new Error('Invalid or missing country data from Sitecore');
+  }
 
   const parsedCountries = new Map<string, string>(
     countriesString.split('&').map((pair: string): [string, string] => {
       const [country, path] = pair.split('=');
-      if (typeof country !== 'string' || typeof path !== 'string') {
+      if (!country || !path) {
         throw new Error('Invalid country-path pair');
       }
       return [country, decodeURIComponent(path)];
@@ -48,7 +49,7 @@ async function getCountriesFromSitecore() {
   return countriesCache;
 }
 
-export default async function (req: NextRequest, ev: NextFetchEvent) {
+export default async function middlewareHandler(req: NextRequest, ev: NextFetchEvent) {
   let response = NextResponse.next();
   let rewrittenUrl: URL | null = null;
 
@@ -62,6 +63,7 @@ export default async function (req: NextRequest, ev: NextFetchEvent) {
     try {
       // Get the country from the request (replace this with actual country detection logic)
       const country = req?.geo?.country || 'Denmark';
+
       if (country) {
         // Fetch countries from Sitecore (cached)
         const countries = await getCountriesFromSitecore();
@@ -69,23 +71,27 @@ export default async function (req: NextRequest, ev: NextFetchEvent) {
         // Check if the request country matches any country from Sitecore
         if (countries.has(country)) {
           rewrittenUrl = req.nextUrl.clone();
-          if (countries.get(country) !== '/') {
-            rewrittenUrl.pathname = `/countryhome${countries.get(country)}` || '/';
+          const countryPath = countries.get(country);
+
+          if (countryPath && countryPath !== '/') {
+            rewrittenUrl.pathname = `/countryhome${countryPath}`;
           }
+
           // Pass the original URL as a query parameter
           rewrittenUrl.searchParams.set('originalPath', req.nextUrl.pathname);
           response = NextResponse.rewrite(rewrittenUrl);
+
           response.cookies.set('middleware-rewrite', 'true', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'test',
             maxAge: 60 * 5, // 5 minutes
-            path: '/',
+            path: '/'
           });
         }
       }
     } catch (error) {
       console.error('Error in country check middleware:', error);
-      // In case of error, continue with the original request
+      // Continue with the original request in case of error
     }
   }
 
@@ -96,11 +102,10 @@ export default async function (req: NextRequest, ev: NextFetchEvent) {
 
 export const config = {
   matcher: [
-    // Explicitly match the home page
-    '/',
+    '/', // Explicitly match the home page
     '/home2',
     '/home3',
     // Match other paths, excluding the ones specified
-    '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
-  ],
+    '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)'
+  ]
 };
