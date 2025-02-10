@@ -103,4 +103,4 @@ export const config = {
     // Match other paths, excluding the ones specified
     '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
   ],
-}
+};
