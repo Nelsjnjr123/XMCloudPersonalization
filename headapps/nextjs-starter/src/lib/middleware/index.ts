@@ -16,9 +16,10 @@ export interface MiddlewarePlugin {
 
 export default async function middleware(
   req: NextRequest,
-  ev: NextFetchEvent
+  ev: NextFetchEvent,
+  res:NextResponse
 ): Promise<NextResponse> {
-  const response = NextResponse.next();
+  const response = res;
 
   debug.common('next middleware start');
 
