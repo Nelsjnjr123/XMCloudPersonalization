@@ -19,9 +19,10 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-GQL-TOKEN': 'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE='
+      'X-GQL-TOKEN':
+        'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE=',
     },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ query }),
   });
 
   if (!response.ok) {
@@ -85,7 +86,7 @@ export default async function middlewareHandler(req: NextRequest, ev: NextFetchE
             httpOnly: true,
             secure: process.env.NODE_ENV === 'test',
             maxAge: 60 * 5, // 5 minutes
-            path: '/'
+            path: '/',
           });
         }
       }
@@ -106,6 +107,6 @@ export const config = {
     '/home2',
     '/home3',
     // Match other paths, excluding the ones specified
-    '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)'
-  ]
+    '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
+  ],
 };

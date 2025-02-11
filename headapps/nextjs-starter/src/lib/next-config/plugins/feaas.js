@@ -5,7 +5,7 @@ const feaasPlugin = (nextConfig = {}) => {
   return Object.assign({}, nextConfig, {
     async rewrites() {
       return [
-        ...await nextConfig.rewrites(),
+        ...(await nextConfig.rewrites()),
         {
           source: '/feaas-render',
           destination: '/api/editing/feaas/render',

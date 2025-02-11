@@ -17,7 +17,7 @@ export interface MiddlewarePlugin {
 export default async function middleware(
   req: NextRequest,
   ev: NextFetchEvent,
-  res:NextResponse
+  res: NextResponse
 ): Promise<NextResponse> {
   const response = res;
 
