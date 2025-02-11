@@ -22,7 +22,7 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
       'X-GQL-TOKEN':
         'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE=',
     },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ query }),
   });
 
   if (!response.ok) {
@@ -64,18 +64,20 @@ export default async function middlewareHandler(req: NextRequest, ev: NextFetchE
     try {
       // Get the country from the request (replace this with actual country detection logic)
       const country = req?.geo?.country || 'Denmark';
-
+      console.log('=====================' + country + '==============================');
       if (country) {
         // Fetch countries from Sitecore (cached)
         const countries = await getCountriesFromSitecore();
 
         // Check if the request country matches any country from Sitecore
         if (countries.has(country)) {
+          console.log('=========has country==' + country + '==============');
           rewrittenUrl = req.nextUrl.clone();
           const countryPath = countries.get(country);
 
           if (countryPath && countryPath !== '/') {
             rewrittenUrl.pathname = `/countryhome${countryPath}`;
+            console.log('==============' + rewrittenUrl.pathname + '========================');
           }
 
           // Pass the original URL as a query parameter
@@ -108,5 +110,5 @@ export const config = {
     '/home3',
     // Match other paths, excluding the ones specified
     '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
-  ]
+  ],
 };
