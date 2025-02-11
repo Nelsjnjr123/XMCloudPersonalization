@@ -4,7 +4,6 @@
 const componentPropsPlugin = (nextConfig = {}) => {
   return Object.assign({}, nextConfig, {
     webpack: (config, options) => {
-      
       if (!options.isServer) {
         // Add a loader to strip out getServerSideProps and getStaticProps from components in the client bundle
         config.module.rules.unshift({
