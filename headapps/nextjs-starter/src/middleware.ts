@@ -22,7 +22,7 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
       'X-GQL-TOKEN':
         'R25xM01mYmZiVzBac0Q1ZG5qcnNiQWFzb2h5L2xlMzNlcDA1WEV4OTgyOD18aG9yaXpvbnRhbGRkZGY2LXRyYWluaW5nMDgyYjAwOS1kZXY1NDE0LWM4MzE=',
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query })
   });
 
   if (!response.ok) {
@@ -108,5 +108,5 @@ export const config = {
     '/home3',
     // Match other paths, excluding the ones specified
     '/((?!api/|_next/|feaas-render|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
-  ],
+  ]
 };
