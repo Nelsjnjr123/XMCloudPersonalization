@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest, NextFetchEvent } from 'next/server';
 import middleware from 'lib/middleware';
 
-// Caching the Sitecore API response
 let countriesCache: Map<string, string> | null = null;
-
+let countryPathCache: Map<string, string> = new Map();
+// Fetch the Home page based on Country settings item from XM Cloud
 async function getCountriesFromSitecore(): Promise<Map<string, string>> {
   const query = `
   {
@@ -14,7 +14,6 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
     }
   }
   `;
-
   const response = await fetch('https://edge.sitecorecloud.io/api/graphql/v1', {
     method: 'POST',
     headers: {
@@ -26,7 +25,7 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch countries from Sitecore');
+    throw new Error('Failed to fetch Home page based country settings item from Sitecore');
   }
 
   const data = await response.json();
@@ -36,6 +35,7 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
     throw new Error('Invalid or missing country data from Sitecore');
   }
 
+  //Map all the country and the matched home page path
   const parsedCountries = new Map<string, string>(
     countriesString.split('&').map((pair: string): [string, string] => {
       const [country, path] = pair.split('=');
@@ -45,11 +45,26 @@ async function getCountriesFromSitecore(): Promise<Map<string, string>> {
       return [country, decodeURIComponent(path)];
     })
   );
-
   countriesCache = parsedCountries;
   return countriesCache;
 }
+// Function to get country path (either from cache or Sitecore)
+async function getCountryPath(userCountry: string): Promise<string | undefined> {
+  // Check if the country path is in the cache
+  if (countryPathCache.has(userCountry)) {
+    return countryPathCache.get(userCountry);
+  }
 
+  // If not in cache, fetch from Sitecore
+  const countries = await getCountriesFromSitecore();
+  const homePagePath = countries.get(userCountry);
+
+  // Add to cache if found
+  if (homePagePath) {
+    countryPathCache.set(userCountry, homePagePath);
+  }
+  return homePagePath;
+}
 export default async function middlewareHandler(req: NextRequest, ev: NextFetchEvent) {
   let response = NextResponse.next();
   let rewrittenUrl: URL | null = null;
@@ -62,21 +77,22 @@ export default async function middlewareHandler(req: NextRequest, ev: NextFetchE
   // Only run country check on the home page and if the rewrite hasn't happened yet
   if (req.nextUrl.pathname === '/') {
     try {
-      // Get the country from the request (replace this with actual country detection logic)
-      const country = req?.geo?.country || 'Denmark';
-      console.log('=====================' + country + '==============================');
-      if (country) {
-        // Fetch countries from Sitecore (cached)
-        const countries = await getCountriesFromSitecore();
+      // Get the country from the request  (assuming code deployed to Vercel)
+      //Vercel will provide this geo location information automatically
+      const userCountry = req?.geo?.country || 'AE';
+      
+      if (userCountry) {
+        // Get country path (from cache or Sitecore)
+        const homePagePath = await getCountryPath(userCountry);
 
         // Check if the request country matches any country from Sitecore
-        if (countries.has(country)) {
-          console.log('=========has country==' + country + '==============');
+        if (homePagePath) {
+          console.log('=========Country ==' + userCountry + ' ==== and homepage path ==='+homePagePath+'===========');
           rewrittenUrl = req.nextUrl.clone();
-          const countryPath = countries.get(country);
-
-          if (countryPath && countryPath !== '/') {
-            rewrittenUrl.pathname = `/countryhome${countryPath}`;
+          
+          //Naviagting to the proper home page based on the identified country
+          if (homePagePath && homePagePath !== '/') {
+            rewrittenUrl.pathname = `/countryhome${homePagePath}`;
             console.log('==============' + rewrittenUrl.pathname + '========================');
           }
 
